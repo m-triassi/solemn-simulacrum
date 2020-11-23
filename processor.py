@@ -1,6 +1,9 @@
 import json
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
+
 
 class DataProcessor:
 
@@ -12,7 +15,7 @@ class DataProcessor:
 
 
     def process(self):
-        disallowed_list = ["You are now connected on Messenger.", "http", "www."]
+        disallowed_list = ["You are now connected on Messenger.", "http", "www.", "@", "You joined the video chat.", "joined the video chat."]
         path = os.getcwd() + "/data/messages/inbox/"
         conversations = []
         # for file_name in [file for file in os.listdir(path) if file.endswith('.json')]:
@@ -31,6 +34,8 @@ class DataProcessor:
                             self.received.append(message["content"])
         return self
 
-processed = DataProcessor("Massimo Triassi").process()
-print(processed.sent)
-print(processed.received)
+
+processed = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
+print(processed.simulacrum_name)
+# print(processed.sent)
+# print(processed.received)

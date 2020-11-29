@@ -8,7 +8,9 @@ The algorithm works by training a classifier, and a generator, and pitting them 
 This is in essence GAN. The Classifier will be a Naive Bayes
 
 ## Installation
+`pip install -U python-dotenv`
 
+`pip install -U nltk`
 ## Usage
 
 ## License

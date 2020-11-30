@@ -65,37 +65,6 @@ class DataProcessor:
         self.received = self.clean_sentences(self.received)
         return self
 
-    def wordbag_from_list(self, listArgument):
-        newList = listArgument
-
-        for i in range(len(newList)):
-            newList[i] = newList[i].lower()
-            newList[i] = re.sub(r'\W', ' ', newList[i])
-            newList[i] = re.sub(r'\s+', ' ', newList[i])
-
-        wordfreq = {}
-        for sentence in newList:
-            tokens = nltk.word_tokenize(sentence)
-            for token in tokens:
-                if token not in wordfreq.keys():
-                    wordfreq[token] = 1
-                else:
-                    wordfreq[token] += 1
-        #             Put number of words in ENV later
-        most_freq = heapq.nlargest(200, wordfreq, key=wordfreq.get)
-        sentence_vectors = []
-        for sentence in newList:
-            sentence_tokens = nltk.word_tokenize(sentence)
-            sent_vec = []
-            for token in most_freq:
-                if token in sentence_tokens:
-                    sent_vec.append(1)
-                else:
-                    sent_vec.append(0)
-            sentence_vectors.append(sent_vec)
-        return np.asarray(sentence_vectors)
-
-
     def clean_sentences(self, sentences):
         for i in range(len(sentences)):
             sentences[i] = sentences[i].lower()

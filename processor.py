@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 from dotenv import load_dotenv
 load_dotenv()
 import random
@@ -8,7 +7,7 @@ import nltk
 import re
 import heapq
 import numpy as np
-
+from sklearn.model_selection import train_test_split
 
 
 class DataProcessor:
@@ -23,39 +22,15 @@ class DataProcessor:
         self.sent = []
         self.received = []
         self.pairs = []
+        self.sent_vector = []
+        self.received_vector = []
+        self.vocabulary_size = 0
+        try:
+            nltk.data.find('tokenizers/punkt')
+        except LookupError:
+            nltk.download('punkt')
 
-    def wordBagFromList(self, listArgument):
-        newList = listArgument
-
-        for i in range(len(newList)):
-            newList[i] = newList[i].lower()
-            newList[i] = re.sub(r'\W', ' ', newList[i])
-            newList[i] = re.sub(r'\s+', ' ', newList[i])
-
-        wordfreq = {}
-        for sentence in newList:
-            tokens = nltk.word_tokenize(sentence)
-            for token in tokens:
-                if token not in wordfreq.keys():
-                    wordfreq[token] = 1
-                else:
-                    wordfreq[token] += 1
-        #             Put number of words in ENV later
-        most_freq = heapq.nlargest(200, wordfreq, key=wordfreq.get)
-        sentence_vectors = []
-        for sentence in newList:
-            sentence_tokens = nltk.word_tokenize(sentence)
-            sent_vec = []
-            for token in most_freq:
-                if token in sentence_tokens:
-                    sent_vec.append(1)
-                else:
-                    sent_vec.append(0)
-            sentence_vectors.append(sent_vec)
-        return np.asarray(sentence_vectors)
-        
-
-    def process(self):
+    def extract(self):
         disallowed_list = ["You are now connected on Messenger.", "http", "www.", "@", "You joined the video chat.", "joined the video chat."]
         path = os.getcwd() + "/data/messages/inbox/"
         conversations = []
@@ -85,18 +60,103 @@ class DataProcessor:
                             self.pairs.append((len(self.sent) - 1, len(self.received) - 1))
                         last_sender = message["sender_name"]
                         last_timestamp = message["timestamp_ms"]
+
+        self.sent = self.clean_sentences(self.sent)
+        self.received = self.clean_sentences(self.received)
         return self
 
+    def wordbag_from_list(self, listArgument):
+        newList = listArgument
 
-processed = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
-# print(processed.simulacrum_name)
-# print(processed.sent)
-# print(processed.received)
+        for i in range(len(newList)):
+            newList[i] = newList[i].lower()
+            newList[i] = re.sub(r'\W', ' ', newList[i])
+            newList[i] = re.sub(r'\s+', ' ', newList[i])
 
-# print(len(processed.pairs))
-temp = random.randint(0, len(processed.pairs)-1)
-print(temp)
-x, y = processed.pairs[random.randint(0, temp)]
-# x, y = processed.pairs[42981]
-print(processed.received[y])
-print(processed.sent[x])
+        wordfreq = {}
+        for sentence in newList:
+            tokens = nltk.word_tokenize(sentence)
+            for token in tokens:
+                if token not in wordfreq.keys():
+                    wordfreq[token] = 1
+                else:
+                    wordfreq[token] += 1
+        #             Put number of words in ENV later
+        most_freq = heapq.nlargest(200, wordfreq, key=wordfreq.get)
+        sentence_vectors = []
+        for sentence in newList:
+            sentence_tokens = nltk.word_tokenize(sentence)
+            sent_vec = []
+            for token in most_freq:
+                if token in sentence_tokens:
+                    sent_vec.append(1)
+                else:
+                    sent_vec.append(0)
+            sentence_vectors.append(sent_vec)
+        return np.asarray(sentence_vectors)
+
+
+    def clean_sentences(self, sentences):
+        for i in range(len(sentences)):
+            sentences[i] = sentences[i].lower()
+            sentences[i] = re.sub(r'\W', ' ', sentences[i])
+            sentences[i] = re.sub(r'\s+', ' ', sentences[i])
+        return sentences
+
+    def create_vocabulary(self, sentences):
+        wordfreq = {}
+        for sentence in sentences:
+            tokens = nltk.word_tokenize(sentence)
+            for token in tokens:
+                if token not in wordfreq.keys():
+                    wordfreq[token] = 1
+                else:
+                    wordfreq[token] += 1
+        #             Put number of words in ENV later
+        return heapq.nlargest(200, wordfreq, key=wordfreq.get)
+
+    def create_sentence_vectors(self, sentences, vocabulary):
+        sentence_vectors = []
+        for sentence in sentences:
+            sentence_tokens = nltk.word_tokenize(sentence)
+            sent_vec = []
+            for token in vocabulary:
+                if token in sentence_tokens:
+                    sent_vec.append(1)
+                else:
+                    sent_vec.append(0)
+            sentence_vectors.append(sent_vec)
+        return np.asarray(sentence_vectors)
+
+    def process(self):
+        self.extract()
+        vocabulary = self.create_vocabulary(self.sent)
+        self.vocabulary_size = len(vocabulary)
+        self.sent_vector = self.create_sentence_vectors(self.sent, vocabulary)
+        self.received_vector = self.create_sentence_vectors(self.received, vocabulary)
+        X = self.sent_vector
+        y = np.full(shape=len(self.sent_vector), fill_value=1, dtype=np.int)
+        X = np.concatenate((X, self.received_vector))
+        y = np.concatenate((y, np.full(shape=len(self.received_vector), fill_value=0, dtype=np.int)))
+
+        # print(self.sent_vector.shape)
+        # print(self.received_vector.shape)
+        print("Processed")
+        return train_test_split(X, y, test_size=0.5)
+
+    def get_random_pair(self):
+        temp = random.randint(0, len(self.pairs) - 1)
+        print(temp)
+        x, y = self.pairs[random.randint(0, temp)]
+        print(self.received[y])
+        print(self.sent[x])
+
+
+# processed = DataProcessor(os.getenv("SIMULACRUM_NAME")).extract()
+
+# train_X, test_X, train_y, test_y = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
+# print(train_X.shape)
+# print(train_y.shape)
+#
+# print(test_X.shape)
+# print(test_y.shape)

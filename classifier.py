@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Potentially extend nn.Module ?
+# Word to vec pytorch use as embedding layer
 class SimulacrumClassifier():
 
     def __init__(self):
@@ -16,9 +17,9 @@ class SimulacrumClassifier():
         self.train_X, self.test_X, self.train_y, self.test_y = processor.process()
         self.num_epoch = int(os.getenv("CLASSIFIER_NUM_EPOCH"))
         self.model = nn.Sequential(
-            nn.Embedding(processor.vocabulary_size, 200),
+            # nn.Embedding(200, 1),
             # nn.ReLU(),
-            # nn.MaxPool1d(75),
+            # nn.MaxPool1d(1),
             # nn.Flatten(),
             nn.Linear(200, 1)
         )
@@ -27,10 +28,11 @@ class SimulacrumClassifier():
 
 
     def train(self):
-        temp_X = Variable(torch.from_numpy(self.train_X))
-        temp_y =  Variable(torch.from_numpy(self.train_y))
+        temp_X = Variable(torch.Tensor(self.train_X))
+        temp_y =  torch.unsqueeze(Variable(torch.Tensor(self.train_y)), 1)
         for epoch in range(self.num_epoch):
             y_predict = self.model(temp_X)
+            # print(y_predict[0], temp_y[0])
             loss_value = self.loss(y_predict, temp_y)
             self.model.zero_grad()
             loss_value.backward()
@@ -41,3 +43,4 @@ class SimulacrumClassifier():
 
 classifier = SimulacrumClassifier()
 classifier.train()
+torch.save(classifier.model, "data/model.pt")

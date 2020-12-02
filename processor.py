@@ -1,4 +1,5 @@
 import json
+import csv
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -99,7 +100,9 @@ class DataProcessor:
 
     def process(self):
         self.extract()
-        vocabulary = self.create_vocabulary(self.sent)
+        all_messages = self.sent
+        all_messages.extend(self.received)
+        vocabulary = self.create_vocabulary(all_messages)
         self.vocabulary_size = len(vocabulary)
         self.sent_vector = self.create_sentence_vectors(self.sent, vocabulary)
         self.received_vector = self.create_sentence_vectors(self.received, vocabulary)
@@ -107,10 +110,9 @@ class DataProcessor:
         y = np.full(shape=len(self.sent_vector), fill_value=1, dtype=np.int)
         X = np.concatenate((X, self.received_vector))
         y = np.concatenate((y, np.full(shape=len(self.received_vector), fill_value=0, dtype=np.int)))
-
         # print(self.sent_vector.shape)
         # print(self.received_vector.shape)
-        print("Processed")
+        print("Processed!")
         return train_test_split(X, y, test_size=0.5)
 
     def get_random_pair(self):
@@ -120,12 +122,25 @@ class DataProcessor:
         print(self.received[y])
         print(self.sent[x])
 
+    def cache_results(self, train_X, test_X, train_y, test_y):
+        if (bool(os.getenv("ENABLE_CACHING"))):
+            print("Caching Results...")
+            np.savetxt("data/train_X.csv", train_X, delimiter=",")
+            np.savetxt("data/test_X.csv", test_X, delimiter=",")
+            np.savetxt("data/train_y.csv", train_y, delimiter=",")
+            np.savetxt("data/test_y.csv", test_y, delimiter=",")
+            print("Cached!")
+
+    def load_cache(self):
+        print("Loading from cache")
+        return np.genfromtxt("data/train_X.csv", delimiter=","), np.genfromtxt("data/test_X.csv", delimiter=","), np.genfromtxt("data/train_y.csv", delimiter=","), np.genfromtxt("data/test_y.csv", delimiter=",")
 
 # processed = DataProcessor(os.getenv("SIMULACRUM_NAME")).extract()
 
-# train_X, test_X, train_y, test_y = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
-# print(train_X.shape)
-# print(train_y.shape)
+train_X, test_X, train_y, test_y = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
+print(train_X)
+print(train_X.shape)
+print(train_y.shape)
 #
 # print(test_X.shape)
 # print(test_y.shape)

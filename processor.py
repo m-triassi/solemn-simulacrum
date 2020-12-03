@@ -1,5 +1,4 @@
 import json
-import csv
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -115,6 +114,15 @@ class DataProcessor:
         print("Processed!")
         return train_test_split(X, y, test_size=0.5)
 
+    def plain_label(self):
+        self.extract()
+        X = np.array(self.sent)
+        y = np.full(shape=len(self.sent), fill_value=1, dtype=np.int)
+        X = np.concatenate((X, np.array(self.received)))
+        y = np.concatenate((y, np.full(shape=len(self.received), fill_value=0, dtype=np.int)))
+
+        return train_test_split(X, y, test_size=0.5)
+
     def get_random_pair(self):
         temp = random.randint(0, len(self.pairs) - 1)
         print(temp)
@@ -122,25 +130,34 @@ class DataProcessor:
         print(self.received[y])
         print(self.sent[x])
 
-    def cache_results(self, train_X, test_X, train_y, test_y):
+    def cache_results(self, train_X, test_X, train_y, test_y, simulacrum_name=os.getenv("SIMULACRUM_NAME")):
         if (bool(os.getenv("ENABLE_CACHING"))):
             print("Caching Results...")
-            np.savetxt("data/train_X.csv", train_X, delimiter=",")
-            np.savetxt("data/test_X.csv", test_X, delimiter=",")
-            np.savetxt("data/train_y.csv", train_y, delimiter=",")
-            np.savetxt("data/test_y.csv", test_y, delimiter=",")
+            np.savetxt(f"data/train_X_{simulacrum_name}.csv", train_X, delimiter=",")
+            np.savetxt(f"data/test_X_{simulacrum_name}.csv", test_X, delimiter=",")
+            np.savetxt(f"data/train_y_{simulacrum_name}.csv", train_y, delimiter=",")
+            np.savetxt(f"data/test_y_{simulacrum_name}.csv", test_y, delimiter=",")
             print("Cached!")
+        else:
+            print("Caching data is not enabled in the .env.")
 
-    def load_cache(self):
+    def load_cache(self, simulacrum_name=os.getenv("SIMULACRUM_NAME")):
         print("Loading from cache")
-        return np.genfromtxt("data/train_X.csv", delimiter=","), np.genfromtxt("data/test_X.csv", delimiter=","), np.genfromtxt("data/train_y.csv", delimiter=","), np.genfromtxt("data/test_y.csv", delimiter=",")
+        if bool(os.getenv("ENABLE_CACHING")):
+            return np.genfromtxt(f"data/train_X_{simulacrum_name}.csv", delimiter=","), \
+                   np.genfromtxt(f"data/test_X_{simulacrum_name}.csv", delimiter=","), \
+                   np.genfromtxt(f"data/train_y_{simulacrum_name}.csv", delimiter=","), \
+                   np.genfromtxt(f"data/test_y_{simulacrum_name}.csv", delimiter=",")
+        else:
+            print("Caching data is not enabled in the .env.")
+
 
 # processed = DataProcessor(os.getenv("SIMULACRUM_NAME")).extract()
 
-train_X, test_X, train_y, test_y = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
-print(train_X)
-print(train_X.shape)
-print(train_y.shape)
+# train_X, test_X, train_y, test_y = DataProcessor(os.getenv("SIMULACRUM_NAME")).process()
+# print(train_X)
+# print(train_X.shape)
+# print(train_y.shape)
 #
 # print(test_X.shape)
 # print(test_y.shape)

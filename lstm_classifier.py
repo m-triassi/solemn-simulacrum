@@ -1,15 +1,9 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
 from keras.models import Model, load_model
 from keras.layers import LSTM, Activation, Dense, Dropout, Input, Embedding
 from keras.optimizers import RMSprop
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing import sequence
-from keras.utils import to_categorical
 from keras.callbacks import EarlyStopping
 from processor import DataProcessor
 import os
@@ -35,7 +29,7 @@ class SimulacrumDiscriminator:
         layer = Embedding(self.max_words, 50, input_length=self.max_len)(inputs)
         layer = LSTM(64)(layer)
         layer = Dense(256, name='FC1')(layer)
-        layer = Activation('relu')(layer)
+        layer = Activation('tanh')(layer)
         layer = Dropout(0.5)(layer)
         layer = Dense(1, name='out_layer')(layer)
         layer = Activation('sigmoid')(layer)
@@ -92,6 +86,7 @@ class SimulacrumDiscriminator:
 
 
 
-# discriminator = SimulacrumDiscriminator().train()
+# discriminator = SimulacrumDiscriminator(batch_size=256).train()
 # discriminator.save()
 # discriminator = SimulacrumDiscriminator().load()
+

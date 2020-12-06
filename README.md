@@ -24,6 +24,7 @@ Run `main.ipynb`, follow the instructions outlining the code cells
 [Evan Dimopoulos](https://github.com/EvanDime)
 ## References
 // TODO: Update...
+
 [Count Vectorizer](https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.CountVectorizer.html)
 to get a word bag count of words used. 
 [Naive Bayes](https://scikit-learn.org/stable/modules/naive_bayes.html) to classify text strings.

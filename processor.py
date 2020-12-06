@@ -31,7 +31,7 @@ class DataProcessor:
             nltk.download('punkt')
 
     def extract(self):
-        disallowed_list = ["You are now connected on Messenger.", "http", "www.", "@", "You joined the video chat.", "joined the video chat."]
+        disallowed_list = ["You are now connected on Messenger.", "http", "www.", "@", "You joined the video chat.", "joined the video chat.", "set the nickname", "set his own nickname", "set your nickname to"]
         path = os.getcwd() + "/data/messages/inbox/"
         conversations = []
         # for file_name in [file for file in os.listdir(path) if file.endswith('.json')]:
@@ -68,8 +68,9 @@ class DataProcessor:
     def clean_sentences(self, sentences):
         for i in range(len(sentences)):
             sentences[i] = sentences[i].lower()
-            sentences[i] = re.sub(r'\W', ' ', sentences[i])
+            # sentences[i] = re.sub(r'\W', ' ', sentences[i])
             sentences[i] = re.sub(r'\s+', ' ', sentences[i])
+        sentences = [x for x in sentences if x and x != " "]
         return sentences
 
     def create_vocabulary(self, sentences):

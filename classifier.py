@@ -41,6 +41,6 @@ class SimulacrumClassifier():
                 print(f"Epoch {epoch} had training loss {loss_value}")
 
 
-classifier = SimulacrumClassifier()
-classifier.train()
-torch.save(classifier.model, "data/model.pt")
+# classifier = SimulacrumClassifier()
+# classifier.train()
+# torch.save(classifier.model, "data/model.pt")

@@ -13,7 +13,7 @@ load_dotenv()
 
 class SimulacrumDiscriminator:
 
-    def __init__(self, max_words=1000, max_len=150, num_epochs=10, batch_size=128):
+    def __init__(self, max_words=1000, max_len=50, num_epochs=10, batch_size=128):
         self.simulacrum_name = os.getenv("SIMULACRUM_NAME")
         self.num_epochs = num_epochs
         self.batch_size = batch_size
@@ -32,25 +32,32 @@ class SimulacrumDiscriminator:
         layer = Activation('tanh')(layer)
         layer = Dropout(0.5)(layer)
         layer = Dense(1, name='out_layer')(layer)
-        layer = Activation('sigmoid')(layer)
+        layer = Activation('relu')(layer)
         model = Model(inputs=inputs, outputs=layer)
         return model
 
     def tokenize_sentences(self, sentences):
         sequences = self.tok.texts_to_sequences(sentences)
+        # sequences = []
+        # for vector in self.tok.texts_to_sequences(sentences):
+        #     sequences.append(np.interp(vector, (0, self.max_words), (0, 1)))
         return sequence.pad_sequences(sequences, maxlen=self.max_len)
 
-    def train(self, train_X=None, train_y=None):
+    def train(self, train_X=None, train_y=None, callbacks=None):
         if train_X is None and train_y is None:
             self.train_X, self.test_X, self.train_y, self.test_y = self.processor.plain_label()
             train_X, train_y = self.train_X, self.train_y
         self.tok.fit_on_texts(train_X)
-        self.fit(self.tokenize_sentences(train_X), train_y)
+        self.fit(self.tokenize_sentences(train_X), train_y, callbacks=callbacks)
         return self
 
-    def fit(self, sequences_matrix, train_y):
+    def fit(self, sequences_matrix, train_y, callbacks=None):
+        cb = [EarlyStopping(monitor='val_loss', min_delta=0.0001)]
+        if callbacks is not None:
+            cb.extend(callbacks)
+
         self.model.fit(sequences_matrix, train_y, batch_size=self.batch_size, epochs=self.num_epochs,
-                  validation_split=0.2, callbacks=[EarlyStopping(monitor='val_loss', min_delta=0.0001)])
+                       validation_split=0.2, callbacks=cb)
         return self
 
     def evaluate(self, test_X=None, test_y=None):
@@ -66,7 +73,7 @@ class SimulacrumDiscriminator:
     def save(self, train_X=None, test_X=None, train_y=None, test_y=None, with_data=False):
         self.model.save(f"data/SimulacrumDiscriminator_{self.simulacrum_name}.model")
         settings = np.array([self.num_epochs, self.batch_size, self.max_words, self.max_len])
-        print(settings)
+        print("Saving Settings: ", settings)
         np.savetxt(f"data/SD_settings_{self.simulacrum_name}.csv", settings, delimiter=",")
         if with_data:
             if train_X is None and test_X is None and train_y is None and test_y is None:
@@ -89,4 +96,3 @@ class SimulacrumDiscriminator:
 # discriminator = SimulacrumDiscriminator(batch_size=256).train()
 # discriminator.save()
 # discriminator = SimulacrumDiscriminator().load()
-

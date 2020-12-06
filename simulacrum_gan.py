@@ -53,17 +53,14 @@ class SolemnSimulacrum:
         self.generator.model.save(f"data/SimulacrumGenerator_{self.generator.simulacrum_name}.model")
 
     def load(self, simulacrum_name=os.getenv("SIMULACRUM_NAME")):
-        self.model = load_model(f"data/SolemnSimulacrum_{self.generator.simulacrum_name}.model")
-        self.discriminator.model = load_model(f"data/SimulacrumDiscriminator_{self.discriminator.simulacrum_name}.model")
-        self.generator.model = load_model(f"data/SimulacrumGenerator_{self.generator.simulacrum_name}.model")
-
-
-
+        self.model = load_model(f"data/SolemnSimulacrum_{simulacrum_name}.model")
+        self.discriminator.model = load_model(f"data/SimulacrumDiscriminator_{simulacrum_name}.model")
+        self.generator.model = load_model(f"data/SimulacrumGenerator_{simulacrum_name}.model")
 
 
 
 # disc = SimulacrumDiscriminator(max_len=15)
 # gen = SimulacrumGenerator(max_len=15)
 # simulacrum = SolemnSimulacrum(disc, gen)
-# simulacrum.train(num_epochs=5)
+# simulacrum.train(num_epochs=500)
 # simulacrum.save()

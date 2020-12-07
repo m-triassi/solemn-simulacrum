@@ -34,7 +34,7 @@ class SimulacrumGenerator:
         model = Model(inputs=inputs, outputs=layer)
         return model
 
-    def architecture2(self):
+    def architecture2(self): #no longer used
         inputs = Input(name='inputs', batch_shape=(self.batch_size, self.max_len))
         layer = Embedding(self.max_words, self.max_len)(inputs)
         layer = GRU(1024, recurrent_initializer='glorot_uniform', stateful=True)(layer)
@@ -47,7 +47,7 @@ class SimulacrumGenerator:
     def tokenize_sentences(self, sentences):
         sequences = self.tok.texts_to_sequences(sentences)
         # sequences = []
-        # for vector in self.tok.texts_to_sequences(sentences):
+        # for vector in self.tok.texts_to_sequences(sentences): #attempt at scaling data
         #     sequences.append(np.interp(vector, (0, self.max_words), (0, 1)))
         return sequence.pad_sequences(sequences, maxlen=self.max_len)
 
@@ -79,7 +79,7 @@ class SimulacrumGenerator:
         self.processor.extract()
         train_X = []
         train_y = []
-        for pair in self.processor.pairs:
+        for pair in self.processor.pairs: # retrieve pairs of messages
             train_X.append(self.processor.received[pair[1]])
             train_y.append(self.processor.sent[pair[0]])
 

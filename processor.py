@@ -12,8 +12,8 @@ from sklearn.model_selection import train_test_split
 
 class DataProcessor:
 
-    # TODO: Make this explanation better
-    # Milliseconds between messages under which we consider messages be a single message
+    # Threshold of time accepted between messages from the same user.
+    # Used to concatenate messages that were sent in rapid succession.
     CONCAT_THRESHOLD = int(os.getenv("CONCAT_THRESHOLD"))
 
     def __init__(self, simulacrum_name):
@@ -44,18 +44,27 @@ class DataProcessor:
                 data = json.load(json_file)
                 last_timestamp = 0
                 last_sender = ""
+                # 4 possibilities of the following loop:
+                # 1 the message was sent by the person we wish to impersonate.
+                # 1.1 It is the first message and does not need to be concatenated. So we add it to the sent list
+                # 1.2 It is a message sent in rapid succession and needs to be concatenated to the previous sent message
+                # 2 the message is sent by another person.
+                # 2.1 This is this persons first message and can be added to the list of received messages.
+                # 2.2 This is a message sent in rapid succession and needs to be concatenated to the previous received message.
                 for message in data["messages"]:
                     if "content" in message and not any(disallowed in message["content"] for disallowed in disallowed_list) and message["type"] == "Generic":
-                        if self.simulacrum_name == message["sender_name"]:
+                        if self.simulacrum_name == message["sender_name"]: #1
                             if len(self.sent) != 0 and last_timestamp - message["timestamp_ms"] < DataProcessor.CONCAT_THRESHOLD and last_sender == self.simulacrum_name:
-                                self.sent[-1] = message["content"] + " " + self.sent[-1]
+                                self.sent[-1] = message["content"] + " " + self.sent[-1] #1.2
                             else:
-                                self.sent.append(message["content"])
-                        else:
+                                self.sent.append(message["content"]) #1.1
+                        else: #2
                             if len(self.received) != 0 and message["sender_name"] == last_sender and last_timestamp - message["timestamp_ms"] < DataProcessor.CONCAT_THRESHOLD:
-                                self.received[-1] = message["content"] + " " + self.received[-1]
+                                self.received[-1] = message["content"] + " " + self.received[-1] #2.2
                             else:
-                                self.received.append(message["content"])
+                                self.received.append(message["content"]) #2.1
+                        #If this message is from the person we wish to impersonate and the previous message was not,
+                        #than it is a response and needs to be recorded.
                         if last_sender == self.simulacrum_name and message["sender_name"] != self.simulacrum_name:
                             self.pairs.append((len(self.sent) - 1, len(self.received) - 1))
                         last_sender = message["sender_name"]
@@ -75,6 +84,7 @@ class DataProcessor:
 
     def create_vocabulary(self, sentences):
         wordfreq = {}
+        #count the appearance of each word in each sentencce.
         for sentence in sentences:
             tokens = nltk.word_tokenize(sentence)
             for token in tokens:
@@ -85,6 +95,9 @@ class DataProcessor:
         #             Put number of words in ENV later
         return heapq.nlargest(200, wordfreq, key=wordfreq.get)
 
+    # no longer being used.
+    # Was the original method used to converd sentences to vectors.
+    # Used the top X words in the vocabulary and set a value to 1 if the word appeared in the sentence.
     def create_sentence_vectors(self, sentences, vocabulary):
         sentence_vectors = []
         for sentence in sentences:
